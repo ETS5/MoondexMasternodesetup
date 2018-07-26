@@ -16,17 +16,17 @@ Outbound connections to other MoonDEX nodes [moondex datadir: $datadir]
 Node IP               Ping    Rx/Tx     Since  Hdrs   Height  Time   Ban
 Address               (ms)   (KBytes)   Block  Syncd  Blocks  (min)  Score
 ==========================================================================='
-~/moondex/moondex-cli -datadir=$datadir getpeerinfo | jq -r '.[] | select(.inbound==false) | \"\(.addr),\(.pingtime*1000|floor) ,\
+moondex-cli -datadir=$datadir getpeerinfo | jq -r '.[] | select(.inbound==false) | \"\(.addr),\(.pingtime*1000|floor) ,\
 \(.bytesrecv/1024|floor)/\(.bytessent/1024|floor),\(.startingheight) ,\(.synced_headers) ,\(.synced_blocks)  ,\
 \((now-.conntime)/60|floor) ,\(.banscore)\"' | column -t -s ',' &&
 echo '==========================================================================='
 uptime
 echo '==========================================================================='
-echo 'Masternode Status: \n# moondex-cli masternode status' && ~/moondex/moondex-cli -datadir=$datadir masternode status
+echo 'Masternode Status: \n# moondex-cli masternode status' && moondex-cli -datadir=$datadir masternode status
 echo '==========================================================================='
-echo 'Sync Status: \n# moondex-cli mnsync status' &&  ~/moondex/moondex-cli -datadir=$datadir mnsync status
+echo 'Sync Status: \n# moondex-cli mnsync status' &&  moondex-cli -datadir=$datadir mnsync status
 echo '==========================================================================='
-echo 'Masternode Information: \n# moondex-cli getinfo' && ~/moondex/moondex-cli -datadir=$datadir getinfo
+echo 'Masternode Information: \n# moondex-cli getinfo' && moondex-cli -datadir=$datadir getinfo
 echo '==========================================================================='
 echo 'Usage: nodemon.sh [refresh delay] [datadir index]'
 echo 'Example: nodemon.sh 10 22 will run every 10 seconds and query moondexd in /$USER/.moondexcore22'
