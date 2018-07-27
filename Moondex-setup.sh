@@ -82,6 +82,15 @@ sudo apt-get -y install wget nano htop jq
 sudo apt-get -y install libzmq3-dev
 sudo apt-get -y install libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev libboost-test-dev libboost-thread-dev
 sudo apt-get -y install libevent-dev
+sudo apt-get install build-essential  libssl-dev libminiupnpc-dev libevent-dev -y
+sudo apt-get install git -y
+sudo apt-get install nano -y
+sudo apt-get install pwgen -y
+sudo apt-get install dnsutils -y
+sudo apt-get install zip unzip -y
+sudo apt-get install libzmq3-dev -y
+sudo apt-get install libboost-all-dev -y
+sudo apt-get install libminiupnpc-dev -y
 
 sudo apt -y install software-properties-common
 sudo add-apt-repository ppa:bitcoin/bitcoin -y
@@ -96,17 +105,45 @@ sudo service fail2ban restart
 sudo apt-get install ufw -y
 sudo apt-get update -y
 
+#Network Settings
+echo -e "${GREEN}Installing Network Settings...${NC}"
+{
+sudo apt-get install ufw -y
+} &> /dev/null
+echo -ne '[##                 ]  (10%)\r'
+{
+sudo apt-get update -y
+} &> /dev/null
+echo -ne '[######             ] (30%)\r'
+{
 sudo ufw default deny incoming
+} &> /dev/null
+echo -ne '[#########          ] (50%)\r'
+{
 sudo ufw default allow outgoing
 sudo ufw allow ssh
+} &> /dev/null
+echo -ne '[###########        ] (60%)\r'
+{
 sudo ufw allow $PORT/tcp
+sudo ufw allow $RPC/tcp
+} &> /dev/null
+echo -ne '[###############    ] (80%)\r'
+{
 sudo ufw allow 22/tcp
 sudo ufw limit 22/tcp
+} &> /dev/null
+echo -ne '[#################  ] (90%)\r'
+{
 echo -e "${YELLOW}"
 sudo ufw --force enable
 echo -e "${NC}"
+} &> /dev/null
+echo -ne '[###################] (100%)\n'
 
-#Generating Random Password for MDEXond JSON RPC
+echo -e "${GREEN}Packages complete....${NC}"
+
+#Generating Random Password for moondexd JSON RPC
 rpcuser=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 rpcpassword=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 
@@ -131,21 +168,21 @@ fi
 
 #Installing Daemon
 cd ~
-sudo rm -r .moondexcore
+sudo rm -rf .moondexcore
+sudo rm -rf moondex
+sudo rm -rf mnchecker
 sudo rm /usr/bin/moondex*
-sudo rm linux-no-gui-v2.0.1.1.tar.gz
-sudo mkdir MoondexMasternodesetup/Moondex
+sudo mkdir moondex
 wget https://github.com/Moondex/MoonDEXCoin/releases/download/v2.0.1.1/linux-no-gui-v2.0.1.1.tar.gz
-sudo tar -xvf linux-no-gui-v2.0.1.1.tar.gz
+sudo mkdir moondex
+sudo tar -zxvf linux-no-gui-v2.0.1.1.tar.gz -C moondex
 sudo rm linux-no-gui-v2.0.1.1.tar.gz
-sudo mv ~/moondex* ~/MoondexMasternodesetup/Moondex
 
 stop_daemon
 
 # Deploy binaries to /usr/bin
-sudo cp MoondexMasternodesetup/Moondex/moondex* /usr/bin/
-sudo chmod 755 -R ~/MoondexMasternodesetup
-sudo chmod 755 -R ~/MoondexMasternodesetup/Moondex
+sudo cp moondex/moondex* /usr/bin/
+sudo chmod 755 -R ~/moondex
 sudo chmod 755 /usr/bin/moondex*
 
 # Deploy Masternode monitoring script
@@ -170,7 +207,16 @@ EOF
 
     #Starting daemon first time just to generate Masternode private key
     moondexd -daemon
-    delay 30
+echo -ne '[##                 ] (15%)\r'
+sleep 6
+echo -ne '[######             ] (30%)\r'
+sleep 9
+echo -ne '[########           ] (45%)\r'
+sleep 6
+echo -ne '[##############     ] (72%)\r'
+sleep 10
+echo -ne '[###################] (100%)\r'
+echo -ne '\n'
 
     #Generate Masternode private key
     echo -e "${YELLOW}Generating Masternode private key...${NC}"
@@ -183,7 +229,17 @@ EOF
     
     #Stopping daemon to create moondex.conf
     stop_daemon
-    delay 30
+    echo -ne '[##                 ] (15%)\r'
+sleep 6
+echo -ne '[######             ] (30%)\r'
+sleep 9
+echo -ne '[########           ] (45%)\r'
+sleep 6
+echo -ne '[##############     ] (72%)\r'
+sleep 10
+echo -ne '[###################] (100%)\r'
+echo -ne '\n'
+
 fi
 
 # Create moondex.conf
@@ -216,21 +272,68 @@ addnode=176.31.214.147:8906
 addnode=188.165.10.239:8906
 addnode=54.36.5.66:8906
 addnode=178.32.52.45:8906
+addnode=145.239.109.60:8906
+addnode=54.38.165.182:8906
+addnode=46.105.62.116:8906
+addnode=136.144.179.195:8906
+addnode=188.166.158.183:8906
+addnode=164.132.88.93:8906
+addnode=80.240.20.72:8906
+addnode=217.69.0.232:8906
+addnode=189.27.85.75:8906
+addnode=95.179.133.241:8906
+addnode=144.202.86.130:8906
+addnode=207.148.104.192:8906
 EOF
 
 #Finally, starting Moondex daemon with new moondex.conf
-moondexd
-delay 5
+~/moondex/moondexd -daemon
+delay 30
 
-#Setting auto star cron job for moondexd
-cronjob="@reboot sleep 30 && moondexd"
+echo "Installing mnchecker"
+cd /root
+mkdir mnchecker
+cd mnchecker
+wget https://raw.githubusercontent.com/Moondex/mnchecker/master/mnchecker
+chmod 740 mnchecker
+cd /root
+
+echo "Installing sentinel..."
+cd /root/.moondexcore
+sudo apt-get install -y git python-virtualenv
+
+wget https://github.com/Moondex/moondex_sentinel/archive/master.zip
+unzip master.zip
+mv moondex_sentinel-master moondex_sentinel
+
+cd moondex_sentinel
+
+export LC_ALL=C
+sudo apt-get install -y virtualenv
+
+virtualenv ./venv
+./venv/bin/pip install -r requirements.txt
+
+echo "moondex_conf=/root/.moondexcore/moondex.conf" >> /root/.moondexcore/moondex_sentinel/sentinel.conf
+
+echo "Adding crontab jobs..."
 crontab -l > tempcron
-if ! grep -q "$cronjob" tempcron; then
-    echo -e "${GREEN}Configuring crontab job...${NC}"
-    echo $cronjob >> tempcron
-    crontab tempcron
-fi
+#echo new cron into cron file
+echo "* * * * * cd /root/.moondexcore/moondex_sentinel && ./venv/bin/python bin/sentinel.py >/dev/null 2>&1" >> tempcron
+echo "@reboot /bin/sleep 20 ; /root/moondex/moondexd -daemon &" >> tempcron
+echo "*/15 * * * * /root/mnchecker/mnchecker >> /root/mnchecker/checker.log 2>&1" >> tempcron
+
+#install new cron file
+crontab tempcron
 rm tempcron
+
+SENTINEL_DEBUG=1 ./venv/bin/python bin/sentinel.py
+echo "Sentinel Installed"
+
+echo "moondex-cli getmininginfo:"
+~/moondex/moondex-cli getmininginfo
+
+sleep 15
 
 echo -e "========================================================================
 ${YELLOW}Masternode setup is complete!${NC}
@@ -297,7 +400,7 @@ echo -e "${NC}-------------------------------------------------
 NOTE: To edit moondex.conf, first stop the moondexd daemon,
 then edit the moondex.conf file and save it in nano: (Ctrl-X + Y + Enter),
 then start the moondexd daemon back up:
-to stop:   ${YELLOW}moondexd stop${NC}
+to stop:   ${YELLOW}moondex-cli stop${NC}
 to edit:   ${YELLOW}nano ~/.moondexcore/moondex.conf${NC}
 to start:  ${YELLOW}moondexd${NC}
 ========================================================================
